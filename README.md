@@ -1,6 +1,6 @@
-# Nexus for OpenShift Enterprise 3
+# Sonarqube for OpenShift Enterprise 3
 
-This is instant nexus application for OpenShift Enterprise 3.
+This is instant sonarqube application for OpenShift Enterprise 3.
 
 ```
 oc new-project sonarqube --display-name="Sonarqube" --description="Sonarqube"
