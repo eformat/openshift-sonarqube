@@ -7,8 +7,6 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
-    annotations:
-      openshift.io/generated-by: OpenShiftNewApp
     creationTimestamp: null
     labels:
       app: sonarqube
@@ -29,33 +27,19 @@ objects:
 - apiVersion: v1
   kind: Route
   metadata:
-    annotations:
-      openshift.io/host.generated: "true"
     creationTimestamp: null
     labels:
       app: sonarqube
     name: sonarqube
   spec:
-    host: sonarqube-sonarqube.192.168.137.2.xip.io
     port:
       targetPort: 9000-tcp
     to:
       kind: Service
       name: sonarqube
-  status:
-    ingress:
-    - conditions:
-      - lastTransitionTime: 2016-07-23T06:09:52Z
-        status: "True"
-        type: Admitted
-      host: sonarqube-sonarqube.192.168.137.2.xip.io
-      routerName: router
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
-    annotations:
-      openshift.io/deployment.cancelled: "2"
-      openshift.io/generated-by: OpenShiftNewApp
     creationTimestamp: null
     generation: 4
     labels:
@@ -79,14 +63,14 @@ objects:
       metadata:
         annotations:
           openshift.io/container.sonarqube.image.entrypoint: '["./bin/run.sh"]'
-          openshift.io/generated-by: OpenShiftNewApp
         creationTimestamp: null
         labels:
           app: sonarqube
           deploymentconfig: sonarqube
       spec:
+        serviceAccountName: ${APPLICATION_NAME}
         containers:
-        - image: docker.io/library/sonarqube@sha256:c048a18cf736b690df4957292efd0c5d4caef81081649bb4bf04eccb5cd1f3f3
+        - image: docker.io/library/sonarqube:latest
           imagePullPolicy: Always
           name: sonarqube
           ports:
@@ -100,7 +84,7 @@ objects:
           - mountPath: /opt/sonarqube/data
             name: sonarqube-volume-2
           - mountPath: /opt/sonarqube/temp
-            name: volume-b5jgo
+            name: sonarqube-temp
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         securityContext: {}
@@ -109,7 +93,7 @@ objects:
         - emptyDir: {}
           name: sonarqube-volume-2
         - emptyDir: {}
-          name: volume-b5jgo
+          name: sonarqube-temp
         - name: sonarqube-volume-1
           persistentVolumeClaim:
             claimName: sonarqube-data
@@ -130,47 +114,22 @@ objects:
   kind: ServiceAccount
   metadata:
     creationTimestamp: null
-    name: builder
-- apiVersion: v1
-  kind: ServiceAccount
-  metadata:
-    creationTimestamp: null
-    name: default
-- apiVersion: v1
-  kind: ServiceAccount
-  metadata:
-    creationTimestamp: null
-    name: deployer
-- apiVersion: v1
-  kind: ServiceAccount
-  metadata:
-    creationTimestamp: null
     labels:
       template: sonarqube-template
     name: sonarqube
 - apiVersion: v1
   kind: ImageStream
   metadata:
-    annotations:
-      openshift.io/generated-by: OpenShiftNewApp
-      openshift.io/image.dockerRepositoryCheck: 2016-07-23T06:09:41Z
-    creationTimestamp: null
-    generation: 2
-    labels:
-      app: sonarqube
     name: sonarqube
   spec:
-    tags:
-    - annotations:
-        openshift.io/imported-from: docker.io/library/sonarqube:latest
-      from:
-        kind: DockerImage
-        name: 172.30.15.104:5000/sonarqube/sonarqube:latest
-      generation: 2
-      importPolicy: {}
-      name: latest
-  status:
-    dockerImageRepository: ""
+    dockerImageRepository: sonarqube
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    creationTimestamp: null
+    labels:
+      template: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}    
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
@@ -181,6 +140,14 @@ objects:
     - ReadWriteOnce
     resources:
       requests:
-        storage: 1Gi
-    volumeName: pv6
+        storage: ${VOLUME_CAPACITY}
   status: {}
+parameters:
+- description: The name for the application.
+  name: APPLICATION_NAME
+  required: true
+  value: sonarqube
+- description: Volume space available for data, e.g. 512Mi, 2Gi
+  name: VOLUME_CAPACITY
+  required: true
+  value: 1Gi
